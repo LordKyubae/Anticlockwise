@@ -12,17 +12,22 @@ import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.DrawFilter;
 import android.graphics.Paint;
+import android.graphics.Picture;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 
+import androidx.annotation.NonNull;
 import androidx.palette.graphics.Palette;
 
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.widget.Toast;
 
@@ -117,6 +122,10 @@ public class MyWatchFace extends CanvasWatchFaceService {
         
 		private Paint mTickAndCirclePaint;
 
+        private Drawable mSunDrawable;
+
+        private Drawable mMoonDrawable;
+
 		private boolean mAmbient;
 
         @Override
@@ -162,6 +171,9 @@ public class MyWatchFace extends CanvasWatchFaceService {
             mTickAndCirclePaint.setAntiAlias(true);
             mTickAndCirclePaint.setStyle(Paint.Style.STROKE);
             mTickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+
+            mSunDrawable = getApplicationContext().getDrawable(R.drawable.baseline_light_mode_24);
+            mMoonDrawable = getApplicationContext().getDrawable(R.drawable.baseline_mode_night_24);
         }
 
         @Override
@@ -274,6 +286,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
 
             drawBackground(canvas);
             drawWatchFace(canvas);
+            drawMeridiem(canvas);
+        }
+
+        private void drawMeridiem(Canvas canvas) {
+            Drawable drawable = mCalendar.get(Calendar.AM_PM) == Calendar.AM ? mSunDrawable : mMoonDrawable;
+
+            drawable.setTint(Color.WHITE);
+            canvas.drawBitmap(getBitmap(drawable), mCenterX - 25, mCenterY - 200, null);
         }
 
         private void drawBackground(Canvas canvas) {
@@ -368,5 +388,14 @@ public class MyWatchFace extends CanvasWatchFaceService {
         }
 		
     }
-	
+
+    private Bitmap getBitmap(@NonNull Drawable drawable) {
+        Picture picture = new Picture();
+        Canvas canvas = picture.beginRecording(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.draw(canvas);
+        picture.endRecording();
+        return Bitmap.createBitmap(picture).copy(Bitmap.Config.ARGB_8888, false);
+    }
+
 }
